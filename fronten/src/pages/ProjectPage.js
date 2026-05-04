@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { useParams } from "react-router-dom";
 import API from "../api";
 
@@ -10,10 +10,15 @@ function ProjectPage() {
 
   const user = JSON.parse(localStorage.getItem("user"));
 
-  const fetchTasks = async () => {
-    const res = await API.get(`/task/${id}`);
-    setTasks(res.data);
-  };
+  // ✅ FIX: useCallback added
+  const fetchTasks = useCallback(async () => {
+    try {
+      const res = await API.get(`/task/${id}`);
+      setTasks(res.data);
+    } catch (err) {
+      console.log(err);
+    }
+  }, [id]);
 
   const createTask = async () => {
     if (!title) {
@@ -21,24 +26,33 @@ function ProjectPage() {
       return;
     }
 
-    await API.post("/task/create", {
-      title,
-      projectId: id,
-      assignedTo: user._id
-    });
+    try {
+      await API.post("/task/create", {
+        title,
+        projectId: id,
+        assignedTo: user._id
+      });
 
-    setTitle("");
-    fetchTasks();
+      setTitle("");
+      fetchTasks();
+    } catch (err) {
+      console.log(err);
+    }
   };
 
   const updateStatus = async (taskId, status) => {
-    await API.put(`/task/update/${taskId}`, { status });
-    fetchTasks();
+    try {
+      await API.put(`/task/update/${taskId}`, { status });
+      fetchTasks();
+    } catch (err) {
+      console.log(err);
+    }
   };
 
+  // ✅ FIX: dependency added
   useEffect(() => {
     fetchTasks();
-  }, []);
+  }, [fetchTasks]);
 
   return (
     <div
